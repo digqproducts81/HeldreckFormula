@@ -1,0 +1,2552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAISON CORE | Enterprise Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --g-blue: #4285f4; --g-red: #ea4335; --g-yellow: #fbbc05; --g-green: #34a853;
+            --bg: #ffffff; --surface: #f8f9fa; --border: #dadce0;
+            --text-primary: #202124; --text-sec: #5f6368;
+            --shadow: 0 1px 3px rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Google Sans', sans-serif; }
+        body { background: var(--bg); color: var(--text-primary); overflow-x: hidden; }
+
+        /* --- NAV BAR --- */
+        nav.top-bar {
+            position: sticky; top: 0; background: #fff; z-index: 100;
+            padding: 12px 24px; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+        .brand { display: flex; align-items: center; gap: 10px; font-size: 22px; color: var(--text-sec); }
+        .clock-chip { background: var(--surface); padding: 6px 16px; border-radius: 20px; font-family: 'Roboto Mono'; font-size: 13px; border: 1px solid var(--border); }
+
+        /* --- LAYOUT --- */
+        .viewport { display: flex; min-height: calc(100vh - 65px); }
+        .sidebar { width: 280px; padding: 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+        .main-stage { flex: 1; padding: 32px; background: #fff; scroll-behavior: smooth; }
+
+        .nav-item { 
+            padding: 12px 20px; border-radius: 0 25px 25px 0; cursor: pointer; color: var(--text-sec);
+            font-weight: 500; transition: var(--transition); margin-left: -20px;
+        }
+        .nav-item:hover { background: #f1f3f4; }
+        .nav-item.active { background: #e8f0fe; color: var(--g-blue); }
+
+        /* --- BENTO COMPONENTS --- */
+        .section-header { margin-bottom: 24px; }
+        .grid-master { display: grid; grid-template-columns: repeat(12, 1fr); gap: 24px; margin-bottom: 48px; }
+        .card { 
+            grid-column: span 12; border: 1px solid var(--border); border-radius: 8px; padding: 24px;
+            background: #fff; transition: var(--transition);
+        }
+        .card:hover { box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15); }
+        
+        @media (min-width: 900px) { .col-4 { grid-column: span 4; } .col-8 { grid-column: span 8; } .col-6 { grid-column: span 6; } }
+
+        /* --- ANALYTICS STYLES --- */
+        .stat-huge { font-size: 48px; font-weight: 400; letter-spacing: -1px; }
+        .status-pill { padding: 4px 12px; border-radius: 14px; font-size: 12px; font-weight: 700; }
+        .present { background: #e6f4ea; color: var(--g-green); }
+        .absent { background: #fce8e6; color: var(--g-red); }
+
+        /* --- INPUTS --- */
+        .g-input { 
+            width: 100%; padding: 12px 16px; border: 1px solid var(--border); 
+            border-radius: 4px; margin-bottom: 16px; font-size: 14px;
+        }
+        .g-input:focus { border-color: var(--g-blue); outline: 2px solid rgba(66,133,244,0.2); }
+        .g-btn { 
+            background: var(--g-blue); color: #fff; border: none; padding: 12px 24px; 
+            border-radius: 4px; font-weight: 500; cursor: pointer; transition: 0.2s;
+        }
+        .g-btn:hover { background: #1a73e8; box-shadow: 0 1px 2px 0 rgba(66,133,244,0.3), 0 1px 3px 1px rgba(66,133,244,0.15); }
+
+        /* --- PROGRESS --- */
+        .progress-track { background: #e8f0fe; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { background: var(--g-blue); height: 100%; transition: width 1s ease; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <nav class="top-bar">
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--g-blue)"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+            <span>Maison <strong>Core</strong></span>
+        </div>
+        <div id="systemClock" class="clock-chip">--:--:--</div>
+    </nav>
+
+    <div class="viewport">
+        <aside class="sidebar">
+            <div class="nav-item active" onclick="setView('dash', this)">Dashboard</div>
+            <div class="nav-item" onclick="setView('registry', this)">Scholar Registry</div>
+            <div class="nav-item" onclick="setView('attendance', this)">Live Attendance</div>
+            <div class="nav-item" onclick="setView('treasury', this)">Treasury Control</div>
+            <div class="nav-item" onclick="setView('academic', this)">Academic Tiers</div>
+        </aside>
+
+        <main class="main-stage">
+            
+            <section id="view-dash">
+                <div class="section-header"><h2>Executive Overview</h2></div>
+                <div class="grid-master">
+                    <div class="card col-4">
+                        <p style="color:var(--text-sec); font-size:12px;">TOTAL REVENUE</p>
+                        <div class="stat-huge" id="statRev">£0</div>
+                    </div>
+                    <div class="card col-4">
+                        <p style="color:var(--text-sec); font-size:12px;">AVG COMPLIANCE</p>
+                        <div class="stat-huge" id="statAtt" style="color:var(--g-green)">0%</div>
+                    </div>
+                    <div class="card col-4">
+                        <p style="color:var(--text-sec); font-size:12px;">ACTIVE SCHOLARS</p>
+                        <div class="stat-huge" id="statCount">0</div>
+                    </div>
+                    <div class="card col-12">
+                        <canvas id="growthChart" height="100"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-registry" class="hidden">
+                <div class="section-header"><h2>Registry Management</h2></div>
+                <div class="grid-master">
+                    <div class="card col-4">
+                        <h3>New Enrollment</h3>
+                        <p style="margin-bottom:20px; font-size:13px; color:var(--text-sec);">Add verified scholar to core database.</p>
+                        <input type="text" id="regName" class="g-input" placeholder="Full Name">
+                        <input type="number" id="regFee" class="g-input" placeholder="Monthly Fee (£)">
+                        <select id="regLevel" class="g-input">
+                            <option value="1">Level 1 (Novice)</option>
+                            <option value="2">Level 2 (Scholar)</option>
+                            <option value="3">Level 3 (Elite)</option>
+                        </select>
+                        <button class="g-btn" onclick="addScholar()">PROCESS</button>
+                    </div>
+                    <div class="card col-8">
+                        <div id="registryData"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-attendance" class="hidden">
+                <div class="section-header"><h2>Live Attendance Log</h2><p id="dateToday" style="color:var(--g-blue)"></p></div>
+                <div class="card col-12" id="attendanceList"></div>
+            </section>
+
+            <section id="view-treasury" class="hidden">
+                <div class="section-header"><h2>Financial Intelligence</h2></div>
+                <div class="grid-master">
+                    <div class="card col-6">
+                        <h3>Projected Quarterly</h3>
+                        <div class="stat-huge" id="projRev">£0</div>
+                    </div>
+                    <div class="card col-6">
+                        <button class="g-btn" style="width:100%; margin-top:20px;" onclick="exportAudit()">DOWNLOAD AUDIT CSV</button>
+                    </div>
+                    <div class="card col-12" id="feeStatus"></div>
+                </div>
+            </section>
+
+            <section id="view-academic" class="hidden">
+                <div class="section-header"><h2>Tier & Semester Analytics</h2></div>
+                <div id="academicProgress"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // --- GOOGLE-SCALE LOGIC ENGINE ---
+        let db = JSON.parse(localStorage.getItem('m_core_v1')) || {
+            scholars: [],
+            logs: [],
+            meta: { last_reset: new Date().toISOString().split('T')[0] }
+        };
+
+        function checkMidnightReset() {
+            const now = new Date().toISOString().split('T')[0];
+            if (db.meta.last_reset !== now) {
+                // Logic: Archive yesterday, clear UI for new day
+                db.meta.last_reset = now;
+                save();
+                location.reload(); // Hard refresh to clear state
+            }
+        }
+
+        function save() {
+            localStorage.setItem('m_core_v1', JSON.stringify(db));
+            render();
+        }
+
+        function setView(view, el) {
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            document.getElementById('view-' + view).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function addScholar() {
+            const name = document.getElementById('regName').value;
+            const fee = document.getElementById('regFee').value;
+            const lvl = document.getElementById('regLevel').value;
+            if(!name || !fee) return;
+
+            db.scholars.push({
+                id: 'S-' + Date.now().toString().slice(-4),
+                name, fee: parseFloat(fee), level: parseInt(lvl),
+                joined: new Date().toISOString()
+            });
+            save();
+            document.getElementById('regName').value = ""; document.getElementById('regFee').value = "";
+        }
+
+        function toggleAtt(sid, status) {
+            const date = new Date().toISOString().split('T')[0];
+            db.logs = db.logs.filter(l => !(l.sid === sid && l.date === date));
+            db.logs.push({ sid, date, status });
+            save();
+        }
+
+        function removeScholar(id) {
+            if(confirm("Confirm deletion?")) {
+                db.scholars = db.scholars.filter(s => s.id !== id);
+                db.logs = db.logs.filter(l => l.sid !== id);
+                save();
+            }
+        }
+
+        function render() {
+            const today = new Date().toISOString().split('T')[0];
+            const regDiv = document.getElementById('registryData');
+            const attDiv = document.getElementById('attendanceList');
+            const acadDiv = document.getElementById('academicProgress');
+            const feeDiv = document.getElementById('feeStatus');
+
+            regDiv.innerHTML = ""; attDiv.innerHTML = ""; acadDiv.innerHTML = ""; feeDiv.innerHTML = "";
+
+            let totalRev = 0; let attTotal = 0;
+
+            db.scholars.forEach(s => {
+                totalRev += s.fee;
+                
+                // Registry Table
+                regDiv.innerHTML += `
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid var(--border);">
+                        <span><strong>${s.name}</strong> <small style="color:var(--text-sec)">#${s.id}</small></span>
+                        <button onclick="removeScholar('${s.id}')" style="background:none; border:none; color:var(--g-red); cursor:pointer">Delete</button>
+                    </div>`;
+
+                // Attendance Log
+                const entry = db.logs.find(l => l.sid === s.id && l.date === today);
+                const statusStr = entry ? (entry.status === 'P' ? 'PRESENT' : 'ABSENT') : 'PENDING';
+                const statusCls = entry ? (entry.status === 'P' ? 'present' : 'absent') : '';
+                attDiv.innerHTML += `
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px dotted var(--border);">
+                        <span>${s.name}</span>
+                        <div style="display:flex; gap:12px; align-items:center;">
+                            <span class="status-pill ${statusCls}">${statusStr}</span>
+                            <button onclick="toggleAtt('${s.id}', 'P')" class="g-btn" style="padding:4px 8px; font-size:11px;">P</button>
+                            <button onclick="toggleAtt('${s.id}', 'A')" class="g-btn" style="background:var(--surface); color:var(--text-primary); border:1px solid var(--border); padding:4px 8px; font-size:11px;">A</button>
+                        </div>
+                    </div>`;
+
+                // Academic Section
+                const sLogs = db.logs.filter(l => l.sid === s.id);
+                const p = sLogs.filter(l => l.status === 'P').length;
+                const perc = sLogs.length > 0 ? Math.round((p/sLogs.length)*100) : 0;
+                attTotal += perc;
+                
+                acadDiv.innerHTML += `
+                    <div class="card" style="margin-bottom:15px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <span>${s.name} - Level ${s.level} Scholar</span>
+                            <span style="color:var(--g-blue); font-weight:bold;">${perc}% Performance</span>
+                        </div>
+                        <div class="progress-track"><div class="progress-fill" style="width:${perc}%"></div></div>
+                        <p style="font-size:12px; color:var(--text-sec)">Semester 1 Goal: ${p}/20 sessions verified.</p>
+                    </div>`;
+
+                // Treasury Check
+                const isDue = new Date().getDate() === new Date(s.joined).getDate();
+                feeDiv.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; padding:12px 0;">
+                        <span>${s.name}</span>
+                        <span>£${s.fee} ${isDue ? '<strong style="color:var(--g-red)">[DUE]</strong>' : ''}</span>
+                    </div>`;
+            });
+
+            document.getElementById('statRev').innerText = `£${totalRev.toLocaleString()}`;
+            document.getElementById('projRev').innerText = `£${(totalRev * 3).toLocaleString()}`;
+            document.getElementById('statCount').innerText = db.scholars.length;
+            document.getElementById('statAtt').innerText = db.scholars.length > 0 ? Math.round(attTotal/db.scholars.length) + "%" : "0%";
+            document.getElementById('dateToday').innerText = new Date().toDateString().toUpperCase();
+            
+            initChart(totalRev);
+        }
+
+        function initChart(val) {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            if(window.mChart) window.mChart.destroy();
+            window.mChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr'],
+                    datasets: [{
+                        data: [val*0.2, val*0.5, val*0.7, val],
+                        borderColor: '#4285f4',
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 0
+                    }]
+                },
+                options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+            });
+        }
+
+        function exportAudit() {
+            let csv = "Scholar,ID,Fee,Status\n";
+            db.scholars.forEach(s => csv += `${s.name},${s.id},${s.fee},Active\n`);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'Maison_Core_Audit.csv'; a.click();
+        }
+
+        setInterval(() => {
+            document.getElementById('systemClock').innerText = new Date().toLocaleTimeString('en-GB');
+            checkMidnightReset();
+        }, 1000);
+
+        render();
+    </script>
+</body>
+</html>
+<style>
+    /* Plugin specific styles to match your UI */
+    #sig-canvas { border: 1px dashed var(--border); background: #fafafa; cursor: crosshair; border-radius: 8px; width: 100%; max-width: 400px; }
+    #doc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+    .doc-paper { background: #fff; width: 100%; max-width: 450px; padding: 40px; border-radius: 4px; box-shadow: var(--shadow); color: #000; position: relative; }
+    .id-card-render { border: 2px solid var(--g-blue); border-radius: 12px; padding: 20px; background: white; text-align: left; }
+    .btn-row { display: flex; gap: 10px; margin-top: 15px; }
+</style>
+
+<script>
+    // Injects new nav items into your existing sidebar automatically
+    const sidebar = document.querySelector('.sidebar');
+    const extraNav = `
+        <div class="nav-item" onclick="setView('billing', this)">Receipts & Billing</div>
+        <div class="nav-item" onclick="setView('idcards', this)">Scholar ID Cards</div>
+        <div class="nav-item" onclick="setView('signature', this)">Tutor Signature</div>
+    `;
+    sidebar.insertAdjacentHTML('beforeend', extraNav);
+</script>
+
+<div id="extra-sections-container">
+    <script>
+        const stage = document.querySelector('.main-stage');
+        const sections = `
+            <section id="view-billing" class="hidden">
+                <div class="section-header"><h2>Payment Receipts</h2></div>
+                <div class="card col-12" id="billingList"></div>
+            </section>
+            
+            <section id="view-idcards" class="hidden">
+                <div class="section-header"><h2>Identity Credentials</h2></div>
+                <div class="grid-master" id="idCardGrid"></div>
+            </section>
+
+            <section id="view-signature" class="hidden">
+                <div class="section-header"><h2>Tutor Verification</h2></div>
+                <div class="card col-6">
+                    <h3>Digital Signature</h3>
+                    <p style="margin-bottom:20px; font-size:13px; color:var(--text-sec);">Sign here once. This will be applied to all official receipts.</p>
+                    <canvas id="sig-canvas" height="150"></canvas>
+                    <div class="btn-row">
+                        <button class="g-btn outline" onclick="clearSig()" style="background:#fff; color:var(--text-primary); border:1px solid var(--border)">Clear</button>
+                        <button class="g-btn" onclick="saveSig()">Save Signature</button>
+                    </div>
+                </div>
+            </section>
+        `;
+        stage.insertAdjacentHTML('beforeend', sections);
+    </script>
+</div>
+
+<div id="doc-overlay" onclick="this.style.display='none'">
+    <div class="doc-paper" id="printable" onclick="event.stopPropagation()">
+        </div>
+</div>
+
+<script>
+    // --- SIGNATURE LOGIC ---
+    const canvas = document.getElementById('sig-canvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    // Adjust for high DPI
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = canvas.offsetHeight * ratio;
+    ctx.scale(ratio, ratio);
+
+    canvas.onmousedown = () => drawing = true;
+    window.onmouseup = () => drawing = false;
+    canvas.onmousemove = (e) => {
+        if (!drawing) return;
+        const rect = canvas.getBoundingClientRect();
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#202124';
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    };
+
+    function clearSig() { ctx.clearRect(0,0,canvas.width,canvas.height); }
+    function saveSig() { 
+        db.tutorSig = canvas.toDataURL(); 
+        save(); 
+        alert("Verification signature updated successfully."); 
+    }
+
+    // --- DOCUMENT GENERATORS ---
+    function issueReceipt(id) {
+        const s = db.scholars.find(x => x.id === id);
+        if(!db.tutorSig) return alert("Please set a Tutor Signature first in the Signature section.");
+        
+        const overlay = document.getElementById('doc-overlay');
+        const paper = document.getElementById('printable');
+        overlay.style.display = 'flex';
+        paper.innerHTML = `
+            <div style="text-align:center; margin-bottom:30px;">
+                <h1 style="font-family:'Google Sans'; letter-spacing:-1px;">Receipt</h1>
+                <p style="color:var(--text-sec); font-size:12px;">Official Payment Confirmation</p>
+            </div>
+            <div style="border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:20px;">
+                <p><strong>Transaction ID:</strong> ${s.id}</p>
+                <p><strong>Date:</strong> ${new Date(s.joined).toLocaleDateString()}</p>
+            </div>
+            <div style="margin-bottom:40px;">
+                <p><strong>Received from:</strong> ${s.name}</p>
+                <p><strong>Amount:</strong> £${s.fee.toLocaleString()}</p>
+                <p><strong>Status:</strong> <span style="color:var(--g-green)">PAID</span></p>
+            </div>
+            <div style="margin-top:40px; border-top:1px solid #eee; padding-top:20px;">
+                <p style="font-size:10px; color:var(--text-sec); margin-bottom:10px;">AUTHORIZED SIGNATURE</p>
+                <img src="${db.tutorSig}" style="height:60px;">
+            </div>
+            <button class="g-btn" style="width:100%; margin-top:30px;" onclick="window.print()">Print Receipt</button>
+        `;
+    }
+
+    function issueCard(id) {
+        const s = db.scholars.find(x => x.id === id);
+        const overlay = document.getElementById('doc-overlay');
+        const paper = document.getElementById('printable');
+        overlay.style.display = 'flex';
+        paper.innerHTML = `
+            <div class="id-card-render">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <span style="color:var(--g-blue); font-weight:700;">MAISON SCHOLAR</span>
+                    <span style="font-size:10px; color:var(--text-sec);">CORE V8</span>
+                </div>
+                <h2 style="margin:0;">${s.name}</h2>
+                <p style="color:var(--text-sec); font-size:12px; margin-bottom:20px;">Level ${s.level} Internal Identification</p>
+                <div style="font-size:11px; background:var(--surface); padding:10px; border-radius:4px;">
+                    <p><strong>ID:</strong> ${s.id}</p>
+                    <p><strong>MEMBER SINCE:</strong> ${new Date(s.joined).toLocaleDateString()}</p>
+                </div>
+            </div>
+            <button class="g-btn" style="width:100%; margin-top:20px;" onclick="window.print()">Export ID Card</button>
+        `;
+    }
+
+    // --- OVERRIDE EXISTING RENDER TO INCLUDE NEW DATA ---
+    const originalRender = window.render;
+    window.render = function() {
+        if(originalRender) originalRender(); // Run original logic
+        
+        const billList = document.getElementById('billingList');
+        const cardGrid = document.getElementById('idCardGrid');
+        if(!billList || !cardGrid) return;
+
+        billList.innerHTML = "";
+        cardGrid.innerHTML = "";
+
+        db.scholars.forEach(s => {
+            // Receipt Rows
+            billList.innerHTML += `
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid var(--border);">
+                    <div>
+                        <p><strong>${s.name}</strong></p>
+                        <p style="font-size:12px; color:var(--text-sec)">Fee: £${s.fee}</p>
+                    </div>
+                    <button class="g-btn outline" onclick="issueReceipt('${s.id}')" style="background:#fff; color:var(--g-blue); border:1px solid var(--border); padding:6px 16px; font-size:12px;">Generate Receipt</button>
+                </div>`;
+
+            // ID Card Grid
+            cardGrid.innerHTML += `
+                <div class="card col-4" style="text-align:center;">
+                    <div style="width:50px; height:50px; background:var(--surface); border-radius:50%; margin: 0 auto 15px; display:flex; align-items:center; justify-content:center; color:var(--g-blue); font-weight:700;">${s.name.charAt(0)}</div>
+                    <p style="font-weight:500;">${s.name}</p>
+                    <p style="font-size:11px; color:var(--text-sec); margin-bottom:15px;">ID: ${s.id}</p>
+                    <button class="g-btn outline" onclick="issueCard('${s.id}')" style="width:100%; background:#fff; color:var(--text-primary); border:1px solid var(--border); padding:8px; font-size:11px;">Issue Admission Card</button>
+                </div>`;
+        });
+    }
+
+    // Initial render call to populate new sections
+    render();
+</script>
+<style>
+    .status-alert { background: #fce8e6; color: var(--g-red); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+    .grade-badge { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: white; }
+    .grade-a { background: var(--g-green); }
+    .grade-c { background: var(--g-yellow); }
+    .grade-f { background: var(--g-red); }
+    .detail-label { font-size: 11px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.5px; }
+    .lifecycle-card { border-left: 4px solid var(--g-blue); }
+</style>
+
+<script>
+    // Injects Lifecycle nav into existing sidebar
+    const lifecycleNav = `
+        <div class="nav-item" onclick="setView('performance', this)">Performance Tracking</div>
+        <div class="nav-item" onclick="setView('emergency', this)">Emergency Contact</div>
+    `;
+    document.querySelector('.sidebar').insertAdjacentHTML('beforeend', lifecycleNav);
+
+    // Injects Lifecycle sections into main stage
+    const lifecycleSections = `
+        <section id="view-performance" class="hidden">
+            <div class="section-header"><h2>Scholar Performance Intelligence</h2></div>
+            <div class="grid-master" id="perfGrid"></div>
+        </section>
+        
+        <section id="view-emergency" class="hidden">
+            <div class="section-header"><h2>Safety & Emergency Records</h2></div>
+            <div class="card col-12">
+                <div id="emergencyTable"></div>
+            </div>
+        </section>
+    `;
+    document.querySelector('.main-stage').insertAdjacentHTML('beforeend', lifecycleSections);
+</script>
+
+<script>
+    // --- PERFORMANCE LOGIC ---
+    function updateGrade(id, score) {
+        const s = db.scholars.find(x => x.id === id);
+        s.lastScore = parseInt(score);
+        save();
+    }
+
+    function updateEmergency(id, contact) {
+        const s = db.scholars.find(x => x.id === id);
+        s.emergency = contact;
+        save();
+    }
+
+    // --- ENHANCED RENDER OVERRIDE ---
+    const lifecycleRender = window.render;
+    window.render = function() {
+        if(lifecycleRender) lifecycleRender();
+        
+        const perfGrid = document.getElementById('perfGrid');
+        const emerTable = document.getElementById('emergencyTable');
+        if(!perfGrid || !emerTable) return;
+
+        perfGrid.innerHTML = "";
+        emerTable.innerHTML = "";
+
+        db.scholars.forEach(s => {
+            // Calculate Late Fee Status
+            const joinDay = new Date(s.joined).getDate();
+            const isLate = new Date().getDate() > joinDay;
+            const lateAlert = isLate ? '<span class="status-alert">PAYMENT OVERDUE</span>' : '';
+
+            // Performance Cards
+            const score = s.lastScore || 0;
+            let gradeClass = 'grade-f';
+            if(score > 50) gradeClass = 'grade-c';
+            if(score > 80) gradeClass = 'grade-a';
+
+            perfGrid.innerHTML += `
+                <div class="card col-6 lifecycle-card">
+                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px;">
+                        <div>
+                            <p><strong>${s.name}</strong></p>
+                            <p class="detail-label">Current Academic Standing</p>
+                        </div>
+                        <div class="grade-badge ${gradeClass}">${score}</div>
+                    </div>
+                    <label class="detail-label">Update Exam Score (%)</label>
+                    <input type="range" min="0" max="100" value="${score}" 
+                           onchange="updateGrade('${s.id}', this.value)" 
+                           style="width:100%; accent-color:var(--g-blue); margin-top:10px;">
+                    <div style="margin-top:15px;">${lateAlert}</div>
+                </div>`;
+
+            // Emergency Table
+            emerTable.innerHTML += `
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid var(--border);">
+                    <div style="flex:1;">
+                        <p><strong>${s.name}</strong></p>
+                        <p style="font-size:12px; color:var(--text-sec)">Scholar ID: ${s.id}</p>
+                    </div>
+                    <div style="flex:2;">
+                        <input type="text" class="g-input" style="margin-bottom:0; font-size:12px;" 
+                               placeholder="Enter Guardian Phone / Name" 
+                               value="${s.emergency || ''}" 
+                               onblur="updateEmergency('${s.id}', this.value)">
+                    </div>
+                    <div style="flex:1; text-align:right;">
+                        <a href="tel:${s.emergency}" style="text-decoration:none; color:var(--g-blue); font-size:12px; font-weight:700;">DIAL EMERGENCY</a>
+                    </div>
+                </div>`;
+        });
+    }
+
+    render();
+</script>
+<style>
+    .roadmap-container { position: relative; padding-left: 30px; border-left: 2px solid var(--surface); margin-top: 20px; }
+    .roadmap-node { position: relative; margin-bottom: 25px; }
+    .roadmap-node::before { content: ''; position: absolute; left: -37px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--border); border: 3px solid #fff; }
+    .roadmap-node.complete::before { background: var(--g-green); }
+    .discipline-meter { height: 4px; width: 100%; background: #eee; border-radius: 10px; margin-top: 8px; overflow: hidden; }
+    .discipline-fill { height: 100%; transition: width 0.5s ease; }
+    .dark-mode-toggle { position: fixed; top: 18px; right: 180px; z-index: 1000; cursor: pointer; padding: 5px 15px; border-radius: 20px; border: 1px solid var(--border); font-size: 11px; background: var(--surface); }
+    body.dark-theme { background: #121212; color: #e8eaed; }
+    body.dark-theme .card, body.dark-theme nav.top-bar, body.dark-theme .sidebar { background: #1e1e1e; border-color: #333; color: #fff; }
+    body.dark-theme .g-input { background: #2d2d2d; border-color: #444; color: #fff; }
+</style>
+
+<button class="dark-mode-toggle" onclick="document.body.classList.toggle('dark-theme')">🌓 Toggle Night Mode</button>
+
+<script>
+    // Injects Advanced nav into existing sidebar
+    const advancedNav = `
+        <div class="nav-item" onclick="setView('curriculum', this)">Course Roadmap</div>
+        <div class="nav-item" onclick="setView('behavior', this)">Discipline Logic</div>
+        <div class="nav-item" onclick="setView('analytics', this)">Wealth Analytics</div>
+    `;
+    document.querySelector('.sidebar').insertAdjacentHTML('beforeend', advancedNav);
+
+    // Injects Advanced sections into main stage
+    const advancedSections = `
+        <section id="view-curriculum" class="hidden">
+            <div class="section-header"><h2>Curriculum Progress Roadmap</h2></div>
+            <div class="grid-master" id="roadmapGrid"></div>
+        </section>
+        
+        <section id="view-behavior" class="hidden">
+            <div class="section-header"><h2>Behavioral & Discipline Meter</h2></div>
+            <div class="card col-12" id="behaviorList"></div>
+        </section>
+
+        <section id="view-analytics" class="hidden">
+            <div class="section-header"><h2>Institutional Wealth Intelligence</h2></div>
+            <div class="grid-master">
+                <div class="card col-6">
+                    <h3>Financial Runway</h3>
+                    <p style="font-size:12px; color:var(--text-sec)">Total value of all active contracts</p>
+                    <div class="stat-huge" id="statRunway" style="color:var(--g-blue)">£0</div>
+                </div>
+                <div class="card col-6">
+                    <h3>Collection Efficiency</h3>
+                    <div class="stat-huge" id="statEfficiency">100%</div>
+                    <p style="font-size:12px; color:var(--text-sec)">Based on payment due dates</p>
+                </div>
+            </div>
+        </section>
+    `;
+    document.querySelector('.main-stage').insertAdjacentHTML('beforeend', advancedSections);
+</script>
+
+<script>
+    // --- ADVANCED LOGIC ---
+    function updateDiscipline(id, val) {
+        const s = db.scholars.find(x => x.id === id);
+        s.discipline = parseInt(val);
+        save();
+    }
+
+    function toggleModule(sid, moduleIdx) {
+        const s = db.scholars.find(x => x.id === sid);
+        if(!s.modules) s.modules = [false, false, false, false];
+        s.modules[moduleIdx] = !s.modules[moduleIdx];
+        save();
+    }
+
+    // --- QUANTUM RENDER OVERRIDE ---
+    const quantumRender = window.render;
+    window.render = function() {
+        if(quantumRender) quantumRender();
+        
+        const roadGrid = document.getElementById('roadmapGrid');
+        const bhList = document.getElementById('behaviorList');
+        if(!roadGrid || !bhList) return;
+
+        roadGrid.innerHTML = ""; bhList.innerHTML = "";
+        let totalContractValue = 0;
+
+        db.scholars.forEach(s => {
+            totalContractValue += (s.fee * 12); // Annualized value
+
+            // Behavioral Discipline Meter
+            const dVal = s.discipline || 50;
+            const dColor = dVal > 70 ? 'var(--g-green)' : (dVal > 40 ? 'var(--g-yellow)' : 'var(--g-red)');
+            bhList.innerHTML += `
+                <div style="padding:20px; border-bottom:1px solid var(--border);">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span><strong>${s.name}</strong></span>
+                        <span style="font-size:12px; color:${dColor}">${dVal}% Focus</span>
+                    </div>
+                    <input type="range" value="${dVal}" oninput="updateDiscipline('${s.id}', this.value)" style="width:100%; accent-color:${dColor}">
+                    <div class="discipline-meter"><div class="discipline-fill" style="width:${dVal}%; background:${dColor}"></div></div>
+                </div>`;
+
+            // Roadmap Progress
+            const mods = s.modules || [false, false, false, false];
+            const modLabels = ['Introduction', 'Core Fundamentals', 'Advanced Logic', 'Final Certification'];
+            let nodesHtml = '';
+            mods.forEach((m, i) => {
+                nodesHtml += `
+                    <div class="roadmap-node ${m ? 'complete' : ''}" onclick="toggleModule('${s.id}', ${i})" style="cursor:pointer">
+                        <p style="font-size:13px; font-weight:${m ? '700' : '400'}">${modLabels[i]}</p>
+                        <p style="font-size:10px; color:var(--text-sec)">${m ? 'Verified' : 'Pending'}</p>
+                    </div>`;
+            });
+
+            roadGrid.innerHTML += `
+                <div class="card col-4">
+                    <h3>${s.name}</h3>
+                    <div class="roadmap-container">${nodesHtml}</div>
+                </div>`;
+        });
+
+        document.getElementById('statRunway').innerText = `£${totalContractValue.toLocaleString()}`;
+    }
+
+    render();
+</script>
+<style>
+    /* Clean Sidebar Footer for Night Mode */
+    .sidebar-footer { margin-top: auto; padding: 20px 0 0 0; border-top: 1px solid var(--border); }
+    .mode-switch { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-sec); cursor: pointer; padding: 10px; border-radius: 8px; transition: 0.2s; }
+    .mode-switch:hover { background: var(--surface); }
+
+    /* File Uploader Component */
+    .file-zone { border: 2px dashed var(--border); padding: 20px; text-align: center; border-radius: 8px; margin-top: 10px; transition: 0.3s; }
+    .file-zone:hover { border-color: var(--g-blue); background: #f8f9ff; }
+    
+    /* Transcript Styles */
+    .transcript-line { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--surface); font-size: 13px; }
+    .inventory-chip { padding: 2px 8px; border-radius: 4px; font-size: 10px; background: #eee; font-weight: 700; }
+</style>
+
+<script>
+    // --- 1. RELOCATE NIGHT MODE & FIX SIDEBAR ---
+    const side = document.querySelector('.sidebar');
+    // Remove the old floating button if it exists
+    const oldBtn = document.querySelector('.dark-mode-toggle');
+    if(oldBtn) oldBtn.remove();
+
+    const sidebarFooter = `
+        <div class="sidebar-footer">
+            <div class="mode-switch" onclick="document.body.classList.toggle('dark-theme')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <span>Night Mode</span>
+            </div>
+        </div>
+    `;
+    side.insertAdjacentHTML('beforeend', sidebarFooter);
+
+    // --- 2. INJECT NEW SECTIONS ---
+    const titanNav = `
+        <div class="nav-item" onclick="setView('transcript', this)">Academic Transcripts</div>
+        <div class="nav-item" onclick="setView('inventory', this)">Asset Inventory</div>
+    `;
+    side.querySelector('.sidebar-footer').insertAdjacentHTML('beforebegin', titanNav);
+
+    const titanSections = `
+        <section id="view-transcript" class="hidden">
+            <div class="section-header"><h2>Official Transcripts</h2></div>
+            <div class="grid-master" id="transcriptGrid"></div>
+        </section>
+
+        <section id="view-inventory" class="hidden">
+            <div class="section-header"><h2>Resource & Asset Tracking</h2></div>
+            <div class="card col-12">
+                <div id="inventoryTable"></div>
+            </div>
+        </section>
+    `;
+    document.querySelector('.main-stage').insertAdjacentHTML('beforeend', titanSections);
+</script>
+
+<script>
+    // --- 3. ADVANCED LOGIC: FILE ATTACHER & ASSETS ---
+    
+    // Replace signature drawing with File Upload Logic
+    const sigSection = document.getElementById('view-signature');
+    if(sigSection) {
+        sigSection.innerHTML = `
+            <div class="card col-6">
+                <h3>Official Authorization Seal</h3>
+                <p style="margin-bottom:20px; font-size:13px; color:var(--text-sec);">Upload your signature (PNG/JPG). This will be stamped on all receipts and ID cards.</p>
+                <div class="file-zone" onclick="document.getElementById('sigUpload').click()">
+                    <p id="fileName">Click to upload Signature Image</p>
+                    <input type="file" id="sigUpload" hidden accept="image/*" onchange="handleSigUpload(this)">
+                </div>
+                <div id="sigPreview" style="margin-top:20px;"></div>
+            </div>
+        `;
+    }
+
+    function handleSigUpload(input) {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                db.tutorSig = e.target.result;
+                document.getElementById('fileName').innerText = file.name;
+                document.getElementById('sigPreview').innerHTML = `<img src="${e.target.result}" style="height:60px; border:1px solid var(--border)">`;
+                save();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Asset Management Logic
+    function toggleAsset(sid, assetName) {
+        const s = db.scholars.find(x => x.id === sid);
+        if(!s.assets) s.assets = {};
+        s.assets[assetName] = !s.assets[assetName];
+        save();
+    }
+
+    // --- 4. TITAN RENDER OVERRIDE ---
+    const titanRender = window.render;
+    window.render = function() {
+        if(titanRender) titanRender();
+        
+        const tGrid = document.getElementById('transcriptGrid');
+        const iTable = document.getElementById('inventoryTable');
+        if(!tGrid || !iTable) return;
+
+        tGrid.innerHTML = ""; iTable.innerHTML = "";
+
+        db.scholars.forEach(s => {
+            // Transcript Display
+            tGrid.innerHTML += `
+                <div class="card col-6">
+                    <h3>${s.name}</h3>
+                    <p style="font-size:11px; color:var(--text-sec); margin-bottom:15px;">Session Data: ${new Date(s.joined).getFullYear()}</p>
+                    <div class="transcript-line"><span>Attendance Rate</span><strong>${s.lastScore || 0}%</strong></div>
+                    <div class="transcript-line"><span>Current Level</span><strong>Tier ${s.level}</strong></div>
+                    <div class="transcript-line"><span>Fee Compliance</span><strong>${s.fee > 0 ? 'Verified' : 'Pending'}</strong></div>
+                    <button class="g-btn outline" style="width:100%; margin-top:15px; font-size:12px;" onclick="issueCard('${s.id}')">Export Full Record</button>
+                </div>`;
+
+            // Inventory Tracking
+            const resources = ['Study Guide', 'Lab Access', 'Uniform', 'Digital Toolkit'];
+            let chips = '';
+            resources.forEach(res => {
+                const owned = s.assets && s.assets[res];
+                chips += `
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                        <input type="checkbox" ${owned ? 'checked' : ''} onclick="toggleAsset('${s.id}', '${res}')">
+                        <span style="font-size:13px; ${owned ? '' : 'opacity:0.5'}">${res}</span>
+                    </div>`;
+            });
+
+            iTable.innerHTML += `
+                <div style="display:flex; padding:20px; border-bottom:1px solid var(--border); gap:40px;">
+                    <div style="width:200px;"><strong>${s.name}</strong></div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; flex:1; gap:10px;">${chips}</div>
+                </div>`;
+        });
+    }
+
+    render();
+</script>
+<style>
+    .timetable-grid { display: grid; grid-template-columns: 80px repeat(7, 1fr); gap: 5px; background: var(--border); border: 1px solid var(--border); }
+    .tt-head { background: var(--g-blue); color: #fff; padding: 10px; text-align: center; font-size: 11px; font-weight: 700; }
+    .tt-hour { background: var(--surface); padding: 10px; font-size: 10px; font-weight: 700; border-bottom: 1px solid var(--border); }
+    .tt-cell { background: #fff; min-height: 40px; padding: 5px; font-size: 10px; border-bottom: 1px solid var(--border); transition: 0.2s; }
+    .tt-cell:hover { background: #f1f3f4; }
+    .subject-tag { display: inline-block; background: #e8f0fe; color: var(--g-blue); padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 5px; margin-bottom: 5px; }
+    .batch-banner { border-left: 4px solid var(--g-yellow); padding-left: 15px; }
+</style>
+
+<script>
+    // --- 1. INJECT SYNAPSE NAV ---
+    const synapseNav = `
+        <div class="nav-item" onclick="setView('subjects', this)">Subject Mapping</div>
+        <div class="nav-item" onclick="setView('scheduler', this)">Weekly Timetable</div>
+        <div class="nav-item" onclick="setView('batches', this)">Batch Management</div>
+    `;
+    document.querySelector('.sidebar-footer').insertAdjacentHTML('beforebegin', synapseNav);
+
+    // --- 2. INJECT SYNAPSE SECTIONS ---
+    const synapseSections = `
+        <section id="view-subjects" class="hidden">
+            <div class="section-header"><h2>Subject Assignment</h2></div>
+            <div class="grid-master" id="subjectAssignGrid"></div>
+        </section>
+
+        <section id="view-scheduler" class="hidden">
+            <div class="section-header"><h2>Weekly Institutional Timetable</h2></div>
+            <div class="card">
+                <div class="timetable-grid" id="mainTimetable"></div>
+            </div>
+        </section>
+
+        <section id="view-batches" class="hidden">
+            <div class="section-header"><h2>Batch Configuration</h2></div>
+            <div class="grid-master" id="batchGrid"></div>
+        </section>
+    `;
+    document.querySelector('.main-stage').insertAdjacentHTML('beforeend', synapseSections);
+</script>
+
+<script>
+    // --- 3. SYNAPSE LOGIC ENGINE ---
+    
+    function addSubjectToScholar(sid) {
+        const input = document.getElementById(`subInput-${sid}`);
+        const s = db.scholars.find(x => x.id === sid);
+        if(!s.subjects) s.subjects = [];
+        if(input.value.trim() !== "") {
+            s.subjects.push(input.value.trim());
+            input.value = "";
+            save();
+            logAction(`Subject added to ${s.name}`);
+        }
+    }
+
+    function removeSubject(sid, index) {
+        const s = db.scholars.find(x => x.id === sid);
+        s.subjects.splice(index, 1);
+        save();
+    }
+
+    function updateBatch(sid, batchName) {
+        const s = db.scholars.find(x => x.id === sid);
+        s.batch = batchName;
+        save();
+        logAction(`${s.name} moved to Batch: ${batchName}`);
+    }
+
+    // --- 4. SYNAPSE RENDER OVERRIDE ---
+    const synapseRender = window.render;
+    window.render = function() {
+        if(synapseRender) synapseRender();
+        
+        const subGrid = document.getElementById('subjectAssignGrid');
+        const bGrid = document.getElementById('batchGrid');
+        const tt = document.getElementById('mainTimetable');
+        
+        if(!subGrid || !bGrid || !tt) return;
+
+        subGrid.innerHTML = ""; bGrid.innerHTML = "";
+        
+        // Render Timetable Structure
+        const days = ['Time', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const hours = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00'];
+        
+        let ttHtml = "";
+        days.forEach(d => ttHtml += `<div class="tt-head">${d}</div>`);
+        hours.forEach(h => {
+            ttHtml += `<div class="tt-hour">${h}</div>`;
+            for(let i=0; i<7; i++) ttHtml += `<div class="tt-cell" contenteditable="true" onblur="logAction('Timetable Updated at ${h}')">--</div>`;
+        });
+        tt.innerHTML = ttHtml;
+
+        db.scholars.forEach(s => {
+            // Subject Management Cards
+            let subTags = "";
+            if(s.subjects) {
+                s.subjects.forEach((sub, i) => {
+                    subTags += `<span class="subject-tag">${sub} <span style="cursor:pointer; font-weight:bold;" onclick="removeSubject('${s.id}', ${i})">×</span></span>`;
+                });
+            }
+
+            subGrid.innerHTML += `
+                <div class="card col-4">
+                    <h3>${s.name}</h3>
+                    <div style="margin: 15px 0;">${subTags || '<p style="font-size:11px; color:var(--text-sec)">No subjects assigned</p>'}</div>
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" id="subInput-${s.id}" class="g-input" style="margin:0; padding:8px;" placeholder="Add Subject...">
+                        <button class="g-btn" style="padding:8px 15px;" onclick="addSubjectToScholar('${s.id}')">+</button>
+                    </div>
+                </div>`;
+
+            // Batch Management Cards
+            bGrid.innerHTML += `
+                <div class="card col-6 batch-banner">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong>${s.name}</strong>
+                            <p style="font-size:11px; color:var(--text-sec)">Current: ${s.batch || 'Unassigned'}</p>
+                        </div>
+                        <select class="g-input" style="width:150px; margin:0;" onchange="updateBatch('${s.id}', this.value)">
+                            <option value="">Choose Batch</option>
+                            <option value="Morning Alpha" ${s.batch==='Morning Alpha'?'selected':''}>Morning Alpha</option>
+                            <option value="Evening Beta" ${s.batch==='Evening Beta'?'selected':''}>Evening Beta</option>
+                            <option value="Weekend Elite" ${s.batch==='Weekend Elite'?'selected':''}>Weekend Elite</option>
+                        </select>
+                    </div>
+                </div>`;
+        });
+    }
+
+    render();
+</script>
+<style>
+    /* Subject Visibility Patch */
+    .subject-tag-v2 { display: inline-block; background: #202124; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin: 3px; font-weight: 500; }
+    .subject-tag-v2::before { content: '#'; color: var(--g-yellow); margin-right: 4px; }
+    
+    /* Search Integration */
+    .tt-search-box { position: relative; margin-bottom: 10px; }
+    .search-results { position: absolute; background: white; border: 1px solid var(--border); width: 100%; z-index: 500; max-height: 150px; overflow-y: auto; box-shadow: var(--shadow); display: none; }
+    .search-item { padding: 10px; cursor: pointer; font-size: 12px; border-bottom: 1px solid #eee; }
+    .search-item:hover { background: var(--surface); color: var(--g-blue); }
+
+    /* Roadmap Fix */
+    .roadmap-node.complete::before { background: var(--g-green) !important; box-shadow: 0 0 8px var(--g-green); }
+    .roadmap-node { padding: 5px 10px; border-radius: 4px; transition: 0.2s; }
+    .roadmap-node:hover { background: var(--surface); }
+</style>
+
+<script>
+    // --- 1. SEARCH UI INJECTION ---
+    const ttHeader = document.querySelector('#view-scheduler .section-header');
+    const searchBar = `
+        <div class="tt-search-box">
+            <input type="text" id="ttScholarSearch" class="g-input" placeholder="🔍 Search student to map into timetable..." oninput="searchScholars(this.value)">
+            <div id="ttSearchResults" class="search-results"></div>
+        </div>
+    `;
+    ttHeader.insertAdjacentHTML('afterend', searchBar);
+</script>
+
+<script>
+    // --- 2. LOGIC REPAIRS & SEARCH ---
+
+    // ROADMAP TICK FIX: Forced State Update
+    function toggleModule(sid, moduleIdx) {
+        const s = db.scholars.find(x => x.id === sid);
+        if(!s.modules) s.modules = [false, false, false, false];
+        s.modules[moduleIdx] = !s.modules[moduleIdx];
+        
+        // Log the achievement
+        const labels = ['Introduction', 'Core Fundamentals', 'Advanced Logic', 'Final Certification'];
+        logAction(`Roadmap Updated: ${s.name} completed ${labels[moduleIdx]}`);
+        
+        save(); // This triggers the global render()
+    }
+
+    // STUDENT SEARCH LOGIC
+    function searchScholars(val) {
+        const resultsDiv = document.getElementById('ttSearchResults');
+        if(!val) { resultsDiv.style.display = 'none'; return; }
+        
+        const matches = db.scholars.filter(s => s.name.toLowerCase().includes(val.toLowerCase()));
+        resultsDiv.innerHTML = "";
+        
+        if(matches.length > 0) {
+            resultsDiv.style.display = 'block';
+            matches.forEach(m => {
+                resultsDiv.innerHTML += `<div class="search-item" onclick="selectForTT('${m.name}')">${m.name} (#${m.id})</div>`;
+            });
+        } else {
+            resultsDiv.style.display = 'none';
+        }
+    }
+
+    function selectForTT(name) {
+        alert("Selected: " + name + ". Now click any cell in the timetable and type their name.");
+        document.getElementById('ttSearchResults').style.display = 'none';
+        document.getElementById('ttScholarSearch').value = "";
+    }
+
+    // --- 3. NEXUS RENDER OVERRIDE ---
+    const nexusRender = window.render;
+    window.render = function() {
+        if(nexusRender) nexusRender();
+        
+        // REPAIR: Re-render subject tags with high visibility
+        const subContainers = document.querySelectorAll('#subjectAssignGrid .card div');
+        db.scholars.forEach((s, idx) => {
+            const container = subContainers[idx * 2]; // Grabbing the subject tag div
+            if(container && s.subjects) {
+                container.innerHTML = s.subjects.map((sub, i) => `
+                    <span class="subject-tag-v2">
+                        ${sub} 
+                        <span style="margin-left:5px; cursor:pointer; color:var(--g-red);" onclick="removeSubject('${s.id}', ${i})">×</span>
+                    </span>
+                `).join('');
+            }
+        });
+
+        // REPAIR: Ensure Roadmap nodes are clickable and styled
+        const roadCards = document.querySelectorAll('#roadmapGrid .card');
+        db.scholars.forEach((s, sIdx) => {
+            const nodes = roadCards[sIdx].querySelectorAll('.roadmap-node');
+            const mods = s.modules || [false, false, false, false];
+            nodes.forEach((node, nIdx) => {
+                if(mods[nIdx]) {
+                    node.classList.add('complete');
+                } else {
+                    node.classList.remove('complete');
+                }
+            });
+        });
+    }
+
+    // Initialize repairs on load
+    render();
+</script>
+<style>
+    /* Roadmap Logic Styles */
+    .roadmap-node { cursor: pointer; padding: 10px; border-radius: 6px; border: 1px solid transparent; transition: 0.2s; position: relative; }
+    .roadmap-node:hover { background: var(--surface); border-color: var(--border); }
+    .roadmap-node.complete { background: #e6f4ea; }
+    .roadmap-node.complete::before { background: var(--g-green) !important; box-shadow: 0 0 10px rgba(52, 168, 83, 0.5); }
+    
+    /* Timetable Persistence Visuals */
+    .tt-cell:focus { outline: 2px solid var(--g-blue); background: #fff; z-index: 10; }
+    .save-indicator { position: fixed; bottom: 20px; right: 20px; font-size: 10px; color: var(--g-green); opacity: 0; transition: 0.5s; }
+    .save-active { opacity: 1; }
+</style>
+
+<div id="saveNotice" class="save-indicator">✔ System State Saved</div>
+
+<script>
+    // --- 1. REMOVE MAPPING UI (CLEANUP) ---
+    const searchBox = document.querySelector('.tt-search-box');
+    if(searchBox) searchBox.remove();
+
+    // --- 2. THE ULTIMATE ROADMAP FIX ---
+    // We overwrite the function to ensure it targets the database AND the DOM correctly
+    function toggleModule(sid, moduleIdx) {
+        const s = db.scholars.find(x => x.id === sid);
+        if(!s) return;
+        
+        if(!s.modules) s.modules = [false, false, false, false];
+        
+        // Flip the state
+        s.modules[moduleIdx] = !s.modules[moduleIdx];
+        
+        // Immediate Audit
+        const status = s.modules[moduleIdx] ? "COMPLETED" : "REOPENED";
+        logAction(`Roadmap: ${s.name} ${status} Module ${moduleIdx + 1}`);
+        
+        // Force Save and Re-Render
+        save();
+    }
+
+    // --- 3. TIMETABLE PERSISTENCE ENGINE ---
+    // This captures every edit in the timetable and saves it to a dedicated key
+    function saveTimetableState() {
+        const tt = document.getElementById('mainTimetable');
+        if(!tt) return;
+        
+        const cells = tt.querySelectorAll('.tt-cell');
+        const ttData = Array.from(cells).map(cell => cell.innerText);
+        localStorage.setItem('maison_tt_data', JSON.stringify(ttData));
+        
+        // Flash Save Notice
+        const notice = document.getElementById('saveNotice');
+        notice.classList.add('save-active');
+        setTimeout(() => notice.classList.remove('save-active'), 1000);
+    }
+
+    function loadTimetableState() {
+        const savedData = JSON.parse(localStorage.getItem('maison_tt_data'));
+        const tt = document.getElementById('mainTimetable');
+        if(!tt || !savedData) return;
+        
+        const cells = tt.querySelectorAll('.tt-cell');
+        savedData.forEach((content, i) => {
+            if(cells[i]) cells[i].innerText = content;
+        });
+    }
+
+    // --- 4. RENDER OVERRIDE (THE GLUE) ---
+    const coreFixRender = window.render;
+    window.render = function() {
+        if(coreFixRender) coreFixRender();
+        
+        // Fix Roadmap Visuals
+        const roadCards = document.querySelectorAll('#roadmapGrid .card');
+        db.scholars.forEach((s, sIdx) => {
+            if(!roadCards[sIdx]) return;
+            const nodes = roadCards[sIdx].querySelectorAll('.roadmap-node');
+            const mods = s.modules || [false, false, false, false];
+            
+            nodes.forEach((node, nIdx) => {
+                // Ensure the click event is fresh
+                node.onclick = () => toggleModule(s.id, nIdx);
+                
+                if(mods[nIdx]) {
+                    node.classList.add('complete');
+                    node.querySelector('p').style.color = 'var(--g-green)';
+                } else {
+                    node.classList.remove('complete');
+                    node.querySelector('p').style.color = '';
+                }
+            });
+        });
+
+        // Initialize Timetable Persistence
+        const cells = document.querySelectorAll('.tt-cell');
+        cells.forEach(cell => {
+            cell.oninput = () => saveTimetableState();
+        });
+    }
+
+    // Run on startup
+    window.addEventListener('load', () => {
+        render();
+        loadTimetableState();
+    });
+</script>
+<style>
+    /* PREMIUN THEME: THE LUXURY OVERRIDE */
+    body.premium-theme { background: #0a0a0a; color: #d4af37; }
+    body.premium-theme .card, body.premium-theme nav.top-bar, body.premium-theme .sidebar { 
+        background: linear-gradient(145deg, #1a1a1a, #0d0d0d); 
+        border-color: #2a2a2a; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    body.premium-theme .g-blue { color: #d4af37 !important; }
+    body.premium-theme .g-btn { 
+        background: linear-gradient(90deg, #d4af37, #f2d06b); 
+        color: #000; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    }
+    body.premium-theme .nav-item.active { background: rgba(212, 175, 55, 0.1); color: #f2d06b; }
+
+    /* ULTIMATE ROADMAP GRAPHICS */
+    .delivery-graph { display: flex; align-items: center; justify-content: space-between; position: relative; padding: 20px 0; margin-top: 10px; }
+    .delivery-line { position: absolute; top: 50%; left: 0; width: 100%; height: 4px; background: #eee; transform: translateY(-50%); z-index: 1; border-radius: 2px; }
+    .delivery-progress { position: absolute; top: 50%; left: 0; height: 4px; background: var(--g-green); transform: translateY(-50%); z-index: 2; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 2px; }
+    
+    .node-point { position: relative; z-index: 3; width: 24px; height: 24px; background: #fff; border: 3px solid #eee; border-radius: 50%; transition: 0.5s; cursor: pointer; }
+    .node-point.active { border-color: var(--g-green); background: var(--g-green); box-shadow: 0 0 15px rgba(52, 168, 83, 0.6); }
+    .node-label { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 10px; font-weight: 700; color: var(--text-sec); }
+
+    /* Footer Toggles */
+    .luxury-toggle { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #d4af37; cursor: pointer; padding: 10px; border-radius: 8px; margin-top: 5px; border: 1px solid rgba(212, 175, 55, 0.2); }
+</style>
+
+<script>
+    // --- 1. THEME TOGGLE INJECTION ---
+    const footer = document.querySelector('.sidebar-footer');
+    if(footer) {
+        footer.innerHTML += `
+            <div class="luxury-toggle" onclick="document.body.classList.toggle('premium-theme')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                <span>Maison Core Premium</span>
+            </div>
+        `;
+    }
+
+    // --- 2. ULTIMATE ROADMAP LOGIC (FIXED) ---
+    function updateProgress(sid, nodeIdx) {
+        const s = db.scholars.find(x => x.id === sid);
+        if(!s.modules) s.modules = [false, false, false, false];
+        
+        // Logical "Order-Style" flow: Clicking node 3 ticks 1 and 2 automatically
+        for(let i = 0; i <= nodeIdx; i++) s.modules[i] = true;
+        // If clicking an already active node, it can act as a reset for following nodes
+        for(let i = nodeIdx + 1; i < 4; i++) s.modules[i] = false;
+
+        logAction(`Progress Graph Updated for ${s.name}`);
+        save(); // Triggers re-render
+    }
+
+    // --- 3. APEX RENDER OVERRIDE ---
+    const apexRender = window.render;
+    window.render = function() {
+        if(apexRender) apexRender();
+        
+        const roadGrid = document.getElementById('roadmapGrid');
+        if(!roadGrid) return;
+
+        roadGrid.innerHTML = "";
+        const labels = ['Enrolled', 'Fundamentals', 'Advanced', 'Certified'];
+
+        db.scholars.forEach(s => {
+            const mods = s.modules || [false, false, false, false];
+            const completedCount = mods.filter(m => m).length;
+            const progressWidth = completedCount > 0 ? ((completedCount - 1) / 3) * 100 : 0;
+
+            let nodesHtml = "";
+            labels.forEach((label, i) => {
+                const isActive = mods[i] ? 'active' : '';
+                nodesHtml += `
+                    <div class="node-point ${isActive}" onclick="updateProgress('${s.id}', ${i})">
+                        <div class="node-label">${label}</div>
+                    </div>
+                `;
+            });
+
+            roadGrid.innerHTML += `
+                <div class="card col-12" style="margin-bottom:40px; padding-bottom:50px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h3 style="margin:0;">${s.name} <small style="color:var(--text-sec); font-weight:normal;">#${s.id}</small></h3>
+                        <span style="font-size:12px; font-weight:bold; color:var(--g-green)">${completedCount*25}% STAGE REACHED</span>
+                    </div>
+                    <div class="delivery-graph">
+                        <div class="delivery-line"></div>
+                        <div class="delivery-progress" style="width: ${progressWidth}%"></div>
+                        ${nodesHtml}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    render();
+</script>
+<style>
+    /* THE CROWN OVERRIDE: ROLEX GREEN & GOLD */
+    body.rolex-theme {
+        background: #004d33 !important; /* Rolex Corporate Green */
+        color: #d4af37 !important;
+        font-family: 'Great Vibes', cursive, serif; /* Luxury Cursive */
+    }
+
+    body.rolex-theme .card, 
+    body.rolex-theme nav.top-bar, 
+    body.rolex-theme .sidebar {
+        background: radial-gradient(circle, #006039 0%, #004d33 100%) !important;
+        border: 1px solid #d4af37 !important;
+        box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.2), 0 15px 35px rgba(0,0,0,0.6) !important;
+        border-radius: 2px !important; /* Sharp, classic edges */
+    }
+
+    /* Bezel Effect for Cards */
+    body.rolex-theme .card::before {
+        content: "";
+        position: absolute;
+        top: 2px; left: 2px; right: 2px; bottom: 2px;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        pointer-events: none;
+    }
+
+    body.rolex-theme .nav-item {
+        font-family: 'Great Vibes', cursive;
+        font-size: 1.4rem;
+        color: #d4af37 !important;
+    }
+
+    body.rolex-theme .nav-item.active {
+        background: rgba(212, 175, 55, 0.15) !important;
+        border-left: 3px solid #d4af37;
+    }
+
+    body.rolex-theme .g-btn {
+        background: linear-gradient(180deg, #d4af37 0%, #b8860b 100%) !important;
+        color: #fff !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        border: 1px solid #8b6508 !important;
+        font-family: 'Great Vibes', cursive;
+        font-size: 1.2rem;
+    }
+
+    body.rolex-theme .stat-huge {
+        font-family: 'Playfair Display', serif; /* Classic watch-face numbers */
+        color: #fff;
+        text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    }
+
+    /* Sidebar Rolex Toggle */
+    .rolex-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: #d4af37;
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 5px;
+        border: 1px solid #d4af37;
+        background: rgba(0, 77, 51, 0.5);
+        transition: 0.3s;
+    }
+    .rolex-toggle:hover { background: #d4af37; color: #004d33; }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+<script>
+    // --- 1. ROLEX TOGGLE INJECTION ---
+    const sideFooter = document.querySelector('.sidebar-footer');
+    if(sideFooter) {
+        sideFooter.innerHTML += `
+            <div class="rolex-toggle" onclick="toggleRolexTheme()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
+                <span>e'clatt Heritage Mode</span>
+            </div>
+        `;
+    }
+
+    function toggleRolexTheme() {
+        document.body.classList.remove('premium-theme'); // Clear other luxury themes
+        document.body.classList.toggle('rolex-theme');
+        logAction("Rolex Heritage Theme Toggled");
+    }
+
+    // --- 2. THEME PERSISTENCE REPAIR ---
+    // Ensure that the cursive fonts don't break the input visibility
+    const rolexRender = window.render;
+    window.render = function() {
+        if(rolexRender) rolexRender();
+        
+        if(document.body.classList.contains('rolex-theme')) {
+            document.querySelectorAll('.g-input').forEach(el => {
+                el.style.fontFamily = 'serif'; // Keep inputs readable
+                el.style.background = '#003322';
+                el.style.color = '#d4af37';
+            });
+        }
+    }
+
+    render();
+</script>
+<style>
+    /* THE AI WORLD OVERRIDE: NEON & CYBER */
+    body.cyber-theme {
+        background: #050505 !important;
+        color: #00f2ff !important;
+        font-family: 'Roboto Mono', monospace !important;
+        background-image: 
+            radial-gradient(circle at 2px 2px, rgba(0, 242, 255, 0.05) 1px, transparent 0);
+        background-size: 40px 40px;
+    }
+
+    body.cyber-theme .card, 
+    body.cyber-theme nav.top-bar, 
+    body.cyber-theme .sidebar {
+        background: rgba(10, 10, 10, 0.8) !important;
+        backdrop-filter: blur(15px) !important;
+        border: 1px solid #00f2ff !important;
+        box-shadow: 0 0 15px rgba(0, 242, 255, 0.2), inset 0 0 5px rgba(0, 242, 255, 0.1) !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Animated Scanning Line */
+    body.cyber-theme .card::after {
+        content: "";
+        position: absolute;
+        top: -100%;
+        left: 0;
+        width: 100%;
+        height: 20px;
+        background: linear-gradient(to bottom, transparent, rgba(0, 242, 255, 0.2), transparent);
+        animation: cyber-scan 4s linear infinite;
+        pointer-events: none;
+    }
+
+    @keyframes cyber-scan {
+        0% { top: -100%; }
+        100% { top: 200%; }
+    }
+
+    body.cyber-theme .nav-item {
+        color: #00f2ff !important;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 11px;
+    }
+
+    body.cyber-theme .nav-item.active {
+        background: rgba(0, 242, 255, 0.1) !important;
+        border-right: 4px solid #00f2ff;
+        text-shadow: 0 0 10px #00f2ff;
+    }
+
+    body.cyber-theme .g-btn {
+        background: transparent !important;
+        color: #00f2ff !important;
+        border: 1px solid #00f2ff !important;
+        clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+        transition: 0.3s;
+        font-weight: bold;
+    }
+
+    body.cyber-theme .g-btn:hover {
+        background: #00f2ff !important;
+        color: #000 !important;
+        box-shadow: 0 0 20px #00f2ff;
+    }
+
+    body.cyber-theme .stat-huge {
+        color: #fff;
+        text-shadow: 0 0 20px rgba(0, 242, 255, 0.8);
+        font-family: 'Orbitron', sans-serif;
+    }
+
+    /* Cyber Toggle UI */
+    .cyber-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 11px;
+        color: #00f2ff;
+        cursor: pointer;
+        padding: 10px;
+        border: 1px solid #00f2ff;
+        margin-top: 5px;
+        background: rgba(0, 242, 255, 0.05);
+        text-transform: uppercase;
+    }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto+Mono&display=swap" rel="stylesheet">
+
+<script>
+    // --- 1. CYBER TOGGLE INJECTION ---
+    const cyberFooter = document.querySelector('.sidebar-footer');
+    if(cyberFooter) {
+        cyberFooter.innerHTML += `
+            <div class="cyber-toggle" onclick="toggleCyberTheme()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                </svg>
+                <span>AI World Alpha</span>
+            </div>
+        `;
+    }
+
+    function toggleCyberTheme() {
+        document.body.classList.remove('rolex-theme', 'premium-theme');
+        document.body.classList.toggle('cyber-theme');
+        logAction("Neural Interface (AI Theme) Engaged");
+    }
+
+    // --- 2. THEME PATCH ---
+    const cyberRender = window.render;
+    window.render = function() {
+        if(cyberRender) cyberRender();
+        
+        if(document.body.classList.contains('cyber-theme')) {
+            document.querySelectorAll('.g-input').forEach(el => {
+                el.style.background = '#000';
+                el.style.border = '1px solid #00f2ff';
+                el.style.color = '#00f2ff';
+                el.style.fontFamily = 'Roboto Mono';
+            });
+            // Make Roadmap nodes neon
+            document.querySelectorAll('.node-point').forEach(node => {
+                node.style.borderColor = '#00f2ff';
+                if(node.classList.contains('active')) node.style.boxShadow = '0 0 15px #00f2ff';
+            });
+        }
+    }
+
+    render();
+</script>
+<style>
+    /* THE COLOURFLOW OVERRIDE: COMIC & CARTOON */
+    body.colourflow-theme {
+        background: #fffbe6 !important; /* Vintage Paper Tint */
+        color: #222 !important;
+        font-family: 'Patrick Hand', cursive !important;
+        background-image: radial-gradient(#ffcc00 1px, transparent 1px);
+        background-size: 20px 20px; /* Polka dot comic background */
+    }
+
+    body.colourflow-theme .card, 
+    body.colourflow-theme nav.top-bar, 
+    body.colourflow-theme .sidebar {
+        background: #ffffff !important;
+        border: 4px solid #000 !important; /* Thick Inked Borders */
+        border-radius: 20px 5px 15px 3px !important; /* Irregular hand-drawn shapes */
+        box-shadow: 8px 8px 0px #000 !important; /* Hard Pop-Art Shadow */
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    body.colourflow-theme .card:hover {
+        transform: rotate(-1deg) scale(1.02);
+    }
+
+    /* Cartoon Navigation */
+    body.colourflow-theme .nav-item {
+        font-size: 1.5rem;
+        color: #000 !important;
+        margin-bottom: 10px;
+    }
+
+    body.colourflow-theme .nav-item.active {
+        background: #ff4757 !important; /* Vibrant Red */
+        color: #fff !important;
+        transform: skewX(-10deg);
+        box-shadow: 4px 4px 0px #000;
+    }
+
+    /* Squishy Action Buttons */
+    body.colourflow-theme .g-btn {
+        background: #1e90ff !important; /* Hero Blue */
+        border: 3px solid #000 !important;
+        border-radius: 50px !important;
+        color: #fff !important;
+        font-family: 'Patrick Hand', cursive;
+        font-size: 1.3rem;
+        box-shadow: 4px 4px 0px #000;
+        transition: 0.1s;
+    }
+
+    body.colourflow-theme .g-btn:active {
+        transform: translateY(4px);
+        box-shadow: 0px 0px 0px #000;
+    }
+
+    /* Comic Stat Numbers */
+    body.colourflow-theme .stat-huge {
+        font-family: 'Bangers', cursive;
+        color: #ff4757;
+        -webkit-text-stroke: 1px #000;
+        letter-spacing: 2px;
+    }
+
+    /* Colourflow Toggle UI */
+    .colourflow-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 10px;
+        border: 3px solid #000;
+        background: #2ed573; /* Slime Green */
+        border-radius: 10px;
+        margin-top: 5px;
+        box-shadow: 3px 3px 0px #000;
+    }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Patrick+Hand&display=swap" rel="stylesheet">
+
+<script>
+    // --- 1. COLOURFLOW TOGGLE INJECTION ---
+    const artisanFooter = document.querySelector('.sidebar-footer');
+    if(artisanFooter) {
+        artisanFooter.innerHTML += `
+            <div class="colourflow-toggle" onclick="toggleColourflow()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 8v8M8 12h8"></path>
+                </svg>
+                <span>Colourflow World</span>
+            </div>
+        `;
+    }
+
+    function toggleColourflow() {
+        // Clear all other specialized themes
+        document.body.classList.remove('rolex-theme', 'premium-theme', 'cyber-theme');
+        document.body.classList.toggle('colourflow-theme');
+        logAction("Cartoon Dimension Portal Opened");
+    }
+
+    // --- 2. ARTISTIC RENDER PATCH ---
+    const colourflowRender = window.render;
+    window.render = function() {
+        if(colourflowRender) colourflowRender();
+        
+        if(document.body.classList.contains('colourflow-theme')) {
+            document.querySelectorAll('.g-input').forEach(el => {
+                el.style.border = '3px solid #000';
+                el.style.borderRadius = '10px';
+                el.style.fontFamily = 'Patrick Hand';
+                el.style.fontSize = '1.1rem';
+            });
+
+            // Turn roadmap nodes into cartoon bubbles
+            document.querySelectorAll('.node-point').forEach(node => {
+                node.style.border = '3px solid #000';
+                node.style.width = '30px';
+                node.style.height = '30px';
+                if(node.classList.contains('active')) {
+                    node.style.background = '#2ed573';
+                }
+            });
+        }
+    }
+
+    render();
+</script>
+<style>
+    /* THE LIGHTYEAR OVERRIDE: MOVING SPACE COMIC */
+    body.lightyear-theme {
+        background: #02010a !important;
+        color: #fff !important;
+        font-family: 'Patrick Hand', cursive !important;
+        overflow-x: hidden;
+    }
+
+    /* Moving Deep Space Background */
+    body.lightyear-theme::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 200%; height: 200%;
+        background: 
+            radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 40px 70px, #fff, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 50px 160px, #ddd, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0));
+        background-repeat: repeat;
+        background-size: 200px 200px;
+        animation: star-drift 100s linear infinite;
+        opacity: 0.5;
+        z-index: -2;
+    }
+
+    @keyframes star-drift {
+        from { transform: translate(0, 0); }
+        to { transform: translate(-50%, -50%); }
+    }
+
+    /* Cosmic Glassmorphism Cards */
+    body.lightyear-theme .card, 
+    body.lightyear-theme nav.top-bar, 
+    body.lightyear-theme .sidebar {
+        background: rgba(15, 20, 45, 0.7) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 2px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 30px !important;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37), inset 0 0 20px rgba(100, 150, 255, 0.2) !important;
+        transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    body.lightyear-theme .card:hover {
+        border-color: #00d2ff !important;
+        transform: translateY(-5px) scale(1.01);
+        box-shadow: 0 0 30px rgba(0, 210, 255, 0.3) !important;
+    }
+
+    /* Lightyear Navigation */
+    body.lightyear-theme .nav-item {
+        font-size: 1.3rem;
+        color: rgba(255, 255, 255, 0.8) !important;
+        letter-spacing: 1px;
+    }
+
+    body.lightyear-theme .nav-item.active {
+        background: linear-gradient(90deg, #7028ff, #00d2ff) !important;
+        color: #fff !important;
+        border-radius: 15px;
+        box-shadow: 0 0 20px #7028ff;
+    }
+
+    /* Supernova Buttons */
+    body.lightyear-theme .g-btn {
+        background: linear-gradient(45deg, #00d2ff, #7028ff) !important;
+        border: none !important;
+        border-radius: 15px !important;
+        color: #fff !important;
+        box-shadow: 0 4px 15px rgba(112, 40, 255, 0.4);
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    body.lightyear-theme .g-btn:hover {
+        filter: brightness(1.2);
+        box-shadow: 0 0 25px #00d2ff;
+    }
+
+    /* Lightyear Toggle UI */
+    .lightyear-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: #00d2ff;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 10px;
+        border: 2px solid #7028ff;
+        background: rgba(112, 40, 255, 0.1);
+        border-radius: 12px;
+        margin-top: 5px;
+        text-shadow: 0 0 5px #00d2ff;
+        transition: 0.3s;
+    }
+    .lightyear-toggle:hover { background: rgba(0, 210, 255, 0.2); }
+</style>
+
+<script>
+    // --- 1. LIGHTYEAR TOGGLE INJECTION ---
+    const spaceFooter = document.querySelector('.sidebar-footer');
+    if(spaceFooter) {
+        spaceFooter.innerHTML += `
+            <div class="lightyear-toggle" onclick="toggleLightyear()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Lightyear Core</span>
+            </div>
+        `;
+    }
+
+    function toggleLightyear() {
+        // Clear all previous dimensions
+        document.body.classList.remove('rolex-theme', 'premium-theme', 'cyber-theme', 'colourflow-theme');
+        document.body.classList.toggle('lightyear-theme');
+        logAction("Lightyear Space-Comic Portal Activated");
+    }
+
+    // --- 2. CELESTIAL RENDER PATCH ---
+    const lightyearRender = window.render;
+    window.render = function() {
+        if(lightyearRender) lightyearRender();
+        
+        if(document.body.classList.contains('lightyear-theme')) {
+            document.querySelectorAll('.g-input').forEach(el => {
+                el.style.background = 'rgba(255,255,255,0.05)';
+                el.style.border = '1px solid rgba(255,255,255,0.2)';
+                el.style.color = '#fff';
+                el.style.borderRadius = '10px';
+            });
+
+            // Space-themed Roadmap Nodes
+            document.querySelectorAll('.node-point').forEach(node => {
+                node.style.border = '2px solid #00d2ff';
+                if(node.classList.contains('active')) {
+                    node.style.background = '#00d2ff';
+                    node.style.boxShadow = '0 0 20px #00d2ff, 0 0 40px #7028ff';
+                }
+            });
+        }
+    }
+
+    render();
+</script>
+<style>
+    /* THE FLOW-STATE OVERRIDE: PROFESSIONAL ANIMATED 2D */
+    body.flow-theme {
+        background: #f0f4f8 !important;
+        color: #2c3e50 !important;
+        font-family: 'Patrick Hand', cursive !important;
+        overflow-x: hidden;
+    }
+
+    /* Floating Background Elements */
+    .flow-bg {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        z-index: -1; pointer-events: none; opacity: 0.4;
+    }
+    .blob {
+        position: absolute; background: #d1d9e6; border-radius: 50%;
+        animation: float-drift 20s infinite ease-in-out;
+    }
+
+    @keyframes float-drift {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+    }
+
+    /* Breathing Cards */
+    body.flow-theme .card, 
+    body.flow-theme nav.top-bar, 
+    body.flow-theme .sidebar {
+        background: rgba(255, 255, 255, 0.9) !important;
+        border: 2px solid #2c3e50 !important;
+        border-radius: 18px !important;
+        box-shadow: 6px 6px 0px rgba(44, 62, 80, 0.1) !important;
+        animation: card-breathe 8s infinite ease-in-out;
+    }
+
+    @keyframes card-breathe {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+
+    /* Flowing Navigation */
+    body.flow-theme .nav-item {
+        font-size: 1.2rem;
+        transition: 0.4s;
+        border-radius: 12px;
+    }
+
+    body.flow-theme .nav-item.active {
+        background: #5dade2 !important;
+        color: #fff !important;
+        transform: scale(1.05);
+        box-shadow: 4px 4px 0px #2c3e50;
+    }
+
+    /* Liquid Buttons */
+    body.flow-theme .g-btn {
+        background: #2c3e50 !important;
+        color: #fff !important;
+        border-radius: 12px !important;
+        border: none !important;
+        position: relative;
+        overflow: hidden;
+        transition: 0.3s;
+    }
+
+    body.flow-theme .g-btn:hover {
+        background: #5dade2 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(93, 173, 226, 0.4);
+    }
+
+    /* Flow Toggle UI */
+    .flow-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: #2c3e50;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 10px;
+        border: 2px solid #2c3e50;
+        background: #fff;
+        border-radius: 12px;
+        margin-top: 5px;
+        transition: 0.3s;
+    }
+    .flow-toggle:hover { background: #5dade2; color: #fff; }
+</style>
+
+<script>
+    // --- 1. FLOW TOGGLE & BG INJECTION ---
+    const flowFooter = document.querySelector('.sidebar-footer');
+    if(flowFooter) {
+        flowFooter.innerHTML += `
+            <div class="flow-toggle" onclick="toggleFlowTheme()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path>
+                    <path d="M12 6a6 6 0 0 0-6 6h12a6 6 0 0 0-6-6z"></path>
+                </svg>
+                <span>Maison Flow-State</span>
+            </div>
+        `;
+    }
+
+    // Inject 2D Blobs for background
+    const bg = document.createElement('div');
+    bg.className = 'flow-bg';
+    for(let i=0; i<5; i++) {
+        const blob = document.createElement('div');
+        blob.className = 'blob';
+        const size = Math.random() * 200 + 100;
+        blob.style.width = size + 'px';
+        blob.style.height = size + 'px';
+        blob.style.top = Math.random() * 100 + '%';
+        blob.style.left = Math.random() * 100 + '%';
+        blob.style.animationDelay = (i * 2) + 's';
+        bg.appendChild(blob);
+    }
+    document.body.appendChild(bg);
+
+    function toggleFlowTheme() {
+        const themes = ['rolex-theme', 'premium-theme', 'cyber-theme', 'colourflow-theme', 'lightyear-theme'];
+        document.body.classList.remove(...themes);
+        document.body.classList.toggle('flow-theme');
+        logAction("Flow-State 2D Dimension Engaged");
+    }
+
+    // --- 2. ORGANIC RENDER PATCH ---
+    const flowRender = window.render;
+    window.render = function() {
+        if(flowRender) flowRender();
+        
+        if(document.body.classList.contains('flow-theme')) {
+            document.querySelectorAll('.g-input').forEach(el => {
+                el.style.border = '2px solid #2c3e50';
+                el.style.borderRadius = '10px';
+                el.style.background = '#fff';
+            });
+
+            // Smooth Roadmap Nodes
+            document.querySelectorAll('.node-point').forEach(node => {
+                node.style.border = '3px solid #2c3e50';
+                node.style.transition = '0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                if(node.classList.contains('active')) {
+                    node.style.background = '#5dade2';
+                    node.style.transform = 'scale(1.2)';
+                }
+            });
+        }
+    }
+
+    render();
+</script>
+<style>
+    /* THE 1901 OVERRIDE: VINTAGE VELLUM & INK */
+    body.m1901-theme {
+        background-color: #d2b48c !important; /* Antique Brass */
+        background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png') !important;
+        color: #3d2b1f !important; /* Sepia Ink */
+        font-family: 'Special Elite', cursive, serif !important;
+    }
+
+    body.m1901-theme .card, 
+    body.m1901-theme nav.top-bar, 
+    body.m1901-theme .sidebar {
+        background: #f4e4bc !important; /* Cream Paper */
+        border: 2px solid #5d4037 !important;
+        border-radius: 0px !important; /* Sharp ledger edges */
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2), inset 0 0 50px rgba(139,69,19,0.1) !important;
+        position: relative;
+    }
+
+    /* Hand-Stamped Effect for Active Items */
+    body.m1901-theme .nav-item.active {
+        background: rgba(139, 69, 19, 0.1) !important;
+        border: 1px dashed #5d4037;
+        color: #8b4513 !important;
+        font-weight: bold;
+        transform: rotate(-1deg);
+    }
+
+    /* Wax Seal Button Style */
+    body.m1901-theme .g-btn {
+        background: #8b0000 !important; /* Deep Red Wax */
+        color: #f4e4bc !important;
+        border: none !important;
+        border-radius: 50% !important;
+        padding: 15px !important;
+        font-family: 'Special Elite', serif;
+        box-shadow: 2px 2px 0px #3d0000, inset 0 0 10px rgba(0,0,0,0.5);
+        text-transform: uppercase;
+        font-size: 10px;
+        min-width: 80px;
+        transition: 0.2s;
+    }
+
+    body.m1901-theme .g-btn:hover {
+        transform: scale(1.1) rotate(5deg);
+        filter: brightness(1.2);
+    }
+
+    /* Typewriter Stat Numbers */
+    body.m1901-theme .stat-huge {
+        font-family: 'Special Elite', serif;
+        color: #3d2b1f;
+        border-bottom: 2px double #3d2b1f;
+    }
+
+    /* 1901 Toggle UI */
+    .m1901-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 11px;
+        color: #3d2b1f;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 10px;
+        border: 1px solid #3d2b1f;
+        background: rgba(244, 228, 188, 0.8);
+        margin-top: 5px;
+        text-transform: uppercase;
+    }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+
+<script>
+    // --- 1. 1901 TOGGLE INJECTION ---
+    const ancientFooter = document.querySelector('.sidebar-footer');
+    if(ancientFooter) {
+        ancientFooter.innerHTML += `
+            <div class="m1901-toggle" onclick="toggle1901Theme()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span>Maison Core 1901</span>
+            </div>
+        `;
+    }
+
+    function toggle1901Theme() {
+        const themes = ['rolex-theme', 'premium-theme', 'cyber-theme', 'colourflow-theme', 'lightyear-theme', 'flow-theme'];
+        document.body.classList.remove(...themes);
+        document.body.classList.toggle('m1901-theme');
+        logAction("Archival Records (1901 Theme) Accessed");
+    }
+
+    // --- 2. HERITAGE RENDER PATCH ---
+    const m1901Render = window.render;
+    window.render = function() {
+        if(m1901Render) m1901Render();
+        
+        if(document.body.classList.contains('m1901-theme')) {
+            document.querySelectorAll('.g-input').forEach(el => {
+                el.style.background = 'transparent';
+                el.style.border = 'none';
+                el.style.borderBottom = '1px solid #3d2b1f';
+                el.style.fontFamily = 'Special Elite';
+                el.style.color = '#3d2b1f';
+            });
+
+            // Turn roadmap nodes into "Ink Dots"
+            document.querySelectorAll('.node-point').forEach(node => {
+                node.style.border = '2px solid #3d2b1f';
+                node.style.borderRadius = '0px';
+                if(node.classList.contains('active')) {
+                    node.style.background = '#3d2b1f';
+                    node.style.boxShadow = 'none';
+                }
+            });
+        }
+    }
+
+    render();
+</script>
+<style>
+    /* THE COMICIA OVERRIDE: BLACK & WHITE NOIR */
+    body.comicia-theme {
+        background-color: #ffffff !important;
+        background-image: radial-gradient(#000 10%, transparent 10%) !important;
+        background-size: 15px 15px !important; /* Ben-Day Dot Background */
+        color: #000 !important;
+        font-family: 'Bangers', cursive, sans-serif !important;
+    }
+
+    body.comicia-theme .card, 
+    body.comicia-theme nav.top-bar, 
+    body.comicia-theme .sidebar {
+        background: #fff !important;
+        border: 5px solid #000 !important;
+        border-radius: 0px !important;
+        box-shadow: 12px 12px 0px #000 !important; /* Deep Noir Side Shades */
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Dramatic Ink Splatter Effect */
+    body.comicia-theme .card::before {
+        content: "";
+        position: absolute;
+        top: -10px; right: -10px;
+        width: 50px; height: 50px;
+        background: #000;
+        clip-path: polygon(20% 0%, 0% 20%, 30% 50%, 0% 80%, 20% 100%, 50% 70%, 80% 100%, 100% 80%, 70% 50%, 100% 20%, 80% 0%, 50% 30%);
+    }
+
+    /* Noir Navigation */
+    body.comicia-theme .nav-item {
+        font-size: 1.4rem;
+        color: #000 !important;
+        text-transform: uppercase;
+        border-bottom: 2px solid transparent;
+        transition: 0.1s;
+    }
+
+    body.comicia-theme .nav-item.active {
+        background: #000 !important;
+        color: #fff !important;
+        transform: rotate(-2deg) scale(1.05);
+        box-shadow: 4px 4px 0px #666;
+    }
+
+    /* Heavy Inked Buttons */
+    body.comicia-theme .g-btn {
+        background: #000 !important;
+        color: #fff !important;
+        border: 3px solid #000 !important;
+        border-radius: 0px !important;
+        font-family: 'Bangers', cursive;
+        font-size: 1.4rem;
+        box-shadow: 5px 5px 0px #888;
+        letter-spacing: 1px;
+    }
+
+    body.comicia-theme .g-btn:active {
+        transform: translate(3px, 3px);
+        box-shadow: 0px 0px 0px #000;
+    }
+
+    /* Comicia Toggle UI */
+    .comicia-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 10px;
+        border: 3px solid #000;
+        background: #000;
+        margin-top: 5px;
+        text-transform: uppercase;
+        box-shadow: 4px 4px 0px #888;
+    }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+
+<script>
+    // --- 1. COMICIA TOGGLE INJECTION ---
+    const noirFooter = document.querySelector('.sidebar-footer');
+    if(noirFooter) {
+        noirFooter.innerHTML += `
+            <div class="comicia-toggle" onclick="toggleComiciaTheme()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+                <span>Maison Core Comicia</span>
+            </div>
+        `;
+    }
+
+    function toggleComiciaTheme() {
+        const themes = ['rolex-theme', 'premium-theme', 'cyber-theme', 'colourflow-theme', 'lightyear-theme', 'flow-theme', 'm1901-theme'];
+        document.body.classList.remove(...themes);
+        document.body.classList.toggle('comicia-theme');
+        logAction("Noir Dimension (Comicia) Activated");
+    }
+
+    // --- 2. NOIR RENDER PATCH ---
+    const comiciaRender = window.render;
+    window.render = function() {
+        if(comiciaRender) comiciaRender();
+        
+        if(document.body.classList.contains('comicia-theme')) {
+            document.querySelectorAll('.g-input').forEach(el => {
+                el.style.border = '4px solid #000';
+                el.style.borderRadius = '0px';
+                el.style.background = '#fff';
+                el.style.color = '#000';
+                el.style.fontWeight = 'bold';
+            });
+
+            // Turn roadmap nodes into Inked Crosses
+            document.querySelectorAll('.node-point').forEach(node => {
+                node.style.border = '4px solid #000';
+                node.style.borderRadius = '0px';
+                node.style.transform = 'rotate(45deg)';
+                if(node.classList.contains('active')) {
+                    node.style.background = '#000';
+                } else {
+                    node.style.background = '#fff';
+                }
+            });
+        }
+    }
+
+    render();
+</script>
+<style>
+    /* THE SPYDER-VERSE OVERRIDE: GLITCH & GRITS */
+    body.spyder-theme {
+        background: #050505 !important;
+        color: #fff !important;
+        font-family: 'Bangers', cursive !important;
+        overflow-x: hidden;
+    }
+
+    /* Glitch Background Effect */
+    body.spyder-theme::before {
+        content: "";
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 2px);
+        background-size: 100% 3px;
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    /* Dynamic Comic Cards */
+    body.spyder-theme .card, 
+    body.spyder-theme nav.top-bar, 
+    body.spyder-theme .sidebar {
+        background: rgba(20, 20, 20, 0.9) !important;
+        border: 3px solid #ff0037 !important; /* Spidey Red */
+        clip-path: polygon(2% 0%, 100% 0%, 98% 100%, 0% 100%); /* Sharp Comic Angles */
+        box-shadow: 8px 0px 0px #00d2ff, -8px 0px 0px #ff0037 !important; /* Chromatic Aberration */
+        transition: 0.3s;
+    }
+
+    body.spyder-theme .card:hover {
+        transform: scale(1.02) rotate(1deg);
+        box-shadow: 12px 0px 0px #00d2ff, -12px 0px 0px #ff0037 !important;
+        animation: spidey-glitch 0.2s infinite;
+    }
+
+    @keyframes spidey-glitch {
+        0% { transform: translate(0) rotate(1deg); }
+        20% { transform: translate(-2px, 2px) rotate(1deg); }
+        40% { transform: translate(-2px, -2px) rotate(1deg); }
+        60% { transform: translate(2px, 2px) rotate(1deg); }
+        80% { transform: translate(2px, -2px) rotate(1deg); }
+        100% { transform: translate(0) rotate(1deg); }
+    }
+
+    /* Spidey Navigation */
+    body.spyder-theme .nav-item {
+        font-size: 1.6rem;
+        color: #fff !important;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px #ff0037;
+        margin-bottom: 15px;
+    }
+
+    body.spyder-theme .nav-item.active {
+        background: #ff0037 !important;
+        color: #fff !important;
+        text-shadow: 2px 2px #000;
+        transform: skewX(-15deg);
+        box-shadow: 5px 5px 0px #00d2ff;
+    }
+
+    /* Web-Slinger Buttons */
+    body.spyder-theme .g-btn {
+        background: #00d2ff !important; /* Web Blue */
+        border: 2px solid #fff !important;
+        color: #000 !important;
+        font-family: 'Bangers', cursive;
+        font-size: 1.4rem;
+        clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+    }
+
+    body.spyder-theme .g-btn:hover {
+        background: #ff0037 !important;
+        color: #fff !important;
+        box-shadow: 0 0 20px #ff0037;
+    }
+
+    /* Spyder Toggle UI */
+    .spyder-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: #ff0037;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 10px;
+        border: 2px solid #00d2ff;
+        background: #000;
+        margin-top: 5px;
+        text-transform: uppercase;
+        box-shadow: 4px 4px 0px #ff0037;
+    }
+</style>
+
+<script>
+    // --- 1. SPYDER TOGGLE INJECTION ---
+    const marvelFooter = document.querySelector('.sidebar-footer');
+    if(marvelFooter) {
+        marvelFooter.innerHTML += `
+            <div class="spyder-toggle" onclick="toggleSpyderTheme()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span>Maison Spyder-Verse</span>
+            </div>
+        `;
+    }
+
+    function toggleSpyderTheme() {
+        const themes = ['rolex-theme', 'premium-theme', 'cyber-theme', 'colourflow-theme', 'lightyear-theme', 'flow-theme', 'm1901-theme', 'comicia-theme'];
+        document.body.classList.remove(...themes);
+        document.body.classList.toggle('spyder-theme');
+        logAction("Multiverse Signature (Spyder-Verse) Detected");
+    }
+
+    // --- 2. MULTIVERSE RENDER PATCH ---
+    const spyderRender = window.render;
+    window.render = function() {
+        if(spyderRender) spyderRender();
+        
+        if(document.body.classList.contains('spyder-theme')) {
+            document.querySelectorAll('.g-input').forEach(el => {
+                el.style.border = '2px solid #ff0037';
+                el.style.background = '#111';
+                el.style.color = '#fff';
+                el.style.fontFamily = 'Bangers';
+            });
+
+            // Turn roadmap nodes into Spidey-Sense Indicators
+            document.querySelectorAll('.node-point').forEach(node => {
+                node.style.border = '3px solid #00d2ff';
+                node.style.borderRadius = '2px';
+                if(node.classList.contains('active')) {
+                    node.style.background = '#ff0037';
+                    node.style.boxShadow = '0 0 10px #ff0037, 0 0 20px #00d2ff';
+                }
+            });
+        }
+    }
+
+    render();
+</script>
+<style>
+    /* THE NOTEBOOK OVERRIDE */
+    body.notebook-theme {
+        background: #e0e0e0 !important; /* Desk surface */
+        color: #1a3a6d !important; /* Blue fountain pen ink */
+        font-family: 'Indie Flower', cursive !important;
+        line-height: 1.6;
+    }
+
+    body.notebook-theme .main-stage,
+    body.notebook-theme .sidebar {
+        background: #fff !important;
+        background-image: 
+            linear-gradient(90deg, transparent 79px, #abced4 79px, #abced4 81px, transparent 81px),
+            linear-gradient(#eee .1em, transparent .1em) !important;
+        background-size: 100% 1.6em !important; /* Lined paper look */
+        border: 1px solid #ccc !important;
+        box-shadow: 2px 5px 15px rgba(0,0,0,0.1) !important;
+    }
+
+    body.notebook-theme .card {
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 2px dashed #ccc !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding-top: 20px;
+    }
+
+    /* Handwriting styles for all text */
+    body.notebook-theme h1, 
+    body.notebook-theme h2, 
+    body.notebook-theme h3, 
+    body.notebook-theme p, 
+    body.notebook-theme span,
+    body.notebook-theme .nav-item {
+        font-family: 'Indie Flower', cursive !important;
+        color: #1a3a6d !important;
+        font-weight: normal !important;
+    }
+
+    body.notebook-theme .nav-item.active {
+        text-decoration: underline wavy #ff4757;
+        background: transparent !important;
+        transform: rotate(-1deg);
+    }
+
+    /* Sketchy Buttons */
+    body.notebook-theme .g-btn {
+        background: transparent !important;
+        color: #1a3a6d !important;
+        border: 2px solid #1a3a6d !important;
+        border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important; /* Hand-drawn circle */
+        font-family: 'Indie Flower', cursive !important;
+        padding: 5px 15px !important;
+    }
+
+    body.notebook-theme .g-btn:hover {
+        background: rgba(26, 58, 109, 0.05) !important;
+        transform: scale(1.05);
+    }
+
+    /* Notebook Toggle UI */
+    .notebook-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: #1a3a6d;
+        cursor: pointer;
+        padding: 10px;
+        border: 1px solid #1a3a6d;
+        background: #fff;
+        margin-top: 5px;
+        border-radius: 4px;
+    }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap" rel="stylesheet">
+
+<script>
+    // --- 1. NOTEBOOK TOGGLE INJECTION ---
+    const paperFooter = document.querySelector('.sidebar-footer');
+    if(paperFooter) {
+        paperFooter.innerHTML += `
+            <div class="notebook-toggle" onclick="toggleNotebookTheme()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span>Maison Notebook</span>
+            </div>
+        `;
+    }
+
+    function toggleNotebookTheme() {
+        const allThemes = ['rolex-theme', 'premium-theme', 'cyber-theme', 'colourflow-theme', 'lightyear-theme', 'flow-theme', 'm1901-theme', 'comicia-theme', 'spyder-theme'];
+        document.body.classList.remove(...allThemes);
+        document.body.classList.toggle('notebook-theme');
+        logAction("Notebook Mode: Ink-to-Page Engaged");
+    }
+
+    // --- 2. HANDWRITTEN RENDER PATCH ---
+    const notebookRender = window.render;
+    window.render = function() {
+        if(notebookRender) notebookRender();
+        
+        if(document.body.classList.contains('notebook-theme')) {
+            document.querySelectorAll('.g-input').forEach(el => {
+                el.style.border = 'none';
+                el.style.borderBottom = '1px solid #abced4';
+                el.style.background = 'transparent';
+                el.style.fontFamily = 'Indie Flower';
+                el.style.color = '#1a3a6d';
+                el.style.fontSize = '1.2rem';
+            });
+
+            // Roadmap nodes as "Ink Circles"
+            document.querySelectorAll('.node-point').forEach(node => {
+                node.style.border = '2px solid #1a3a6d';
+                node.style.borderRadius = '50%';
+                if(node.classList.contains('active')) {
+                    node.style.background = '#1a3a6d';
+                    node.style.boxShadow = 'none';
+                } else {
+                    node.style.background = 'transparent';
+                }
+            });
+        }
+    }
+
+    render();
+</script>
+
+
+
