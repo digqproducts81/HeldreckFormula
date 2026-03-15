@@ -1,0 +1,25 @@
+ Maison Core
+--:--:--
+Dashboard
+Scholar Registry
+Live Attendance
+Treasury Control
+Academic Tiers
+Executive Overview
+TOTAL REVENUE
+£0
+AVG COMPLIANCE
+0%
+ACTIVE SCHOLARS
+0
+Registry Management
+New Enrollment
+Add verified scholar to core database.
+PROCESS
+Live Attendance Log
+Financial Intelligence
+Projected Quarterly
+£0
+DOWNLOAD AUDIT CSV
+Tier & Semester Analytics
+🌓 Toggle Night Mode 
