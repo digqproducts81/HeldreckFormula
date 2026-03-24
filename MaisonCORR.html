@@ -2414,6 +2414,58 @@
 
     render();
 </script>
+<script>
+    // 1. Inject the "Attendance History" nav item
+    document.querySelector('.sidebar').insertAdjacentHTML('beforeend', `
+        <div class="nav-item" onclick="setView('attHistory', this)">Attendance History</div>
+    `);
 
+    // 2. Inject the History Section into the main stage
+    document.querySelector('.main-stage').insertAdjacentHTML('beforeend', `
+        <section id="view-attHistory" class="hidden">
+            <div class="section-header"><h2>Historical Attendance Records</h2></div>
+            <div id="historyContainer" class="grid-master"></div>
+        </section>
+    `);
+
+    // 3. Create the Logic to render historical data
+    const historyRender = window.render;
+    window.render = function() {
+        if(historyRender) historyRender(); // Keep your old code running
+        
+        const container = document.getElementById('historyContainer');
+        if(!container) return;
+        container.innerHTML = "";
+
+        db.scholars.forEach(s => {
+            // Find all logs for this scholar and sort by date (newest first)
+            const sLogs = db.logs.filter(l => l.sid === s.id).sort((a,b) => b.date.localeCompare(a.date));
+            
+            let logHtml = sLogs.length > 0 ? "" : "<p style='color:var(--text-sec); font-size:12px;'>No records found.</p>";
+            
+            sLogs.forEach(log => {
+                const statusCls = log.status === 'P' ? 'present' : 'absent';
+                const statusText = log.status === 'P' ? 'PRESENT' : 'ABSENT';
+                const dateParts = log.date.split('-');
+                const formattedDate = `${dateParts[2]}/${dateParts[1]}`; // DD/MM format
+
+                logHtml += `
+                    <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee;">
+                        <span style="font-size:13px; font-weight:500;">${formattedDate}</span>
+                        <span class="status-pill ${statusCls}" style="font-size:10px;">${statusText}</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML += `
+                <div class="card col-4">
+                    <h3 style="margin-bottom:15px; font-size:16px; border-bottom:2px solid var(--g-blue); display:inline-block;">${s.name}</h3>
+                    <div style="max-height:300px; overflow-y:auto;">${logHtml}</div>
+                </div>
+            `;
+        });
+    }
+    render(); // Run initial render
+</script>
 
 
