@@ -3294,6 +3294,57 @@
         console.log("Maison Core: 'Write Notes' text and navigation completely purged.");
     })();
 </script>
+(function() {
+    /**
+     * MAISON CORE: UI PURGE PLUGIN
+     * Targets: 'Batch Management' (Wealth/Institutional Analytics) 
+     * and 'Discipline Logic' (Behavioral Tracking)
+     */
+    const purgeMaisonOptions = () => {
+        // 1. Remove Navigation Items from Sidebar
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            const text = item.innerText.trim().toLowerCase();
+            if (text === 'discipline logic' || 
+                text === 'wealth analytics' || 
+                text === 'institutional wealth intelligence') {
+                item.remove();
+            }
+        });
+
+        // 2. Remove Content Sections (Main Stage)
+        const sectionsToPurge = [
+            'view-behavior',  // Discipline Logic section ID
+            'view-analytics'  // Wealth/Batch Analytics section ID
+        ];
+
+        sectionsToPurge.forEach(id => {
+            const section = document.getElementById(id);
+            if (section) {
+                section.remove();
+            }
+        });
+
+        // 3. Safety Redirect
+        // If the user was currently viewing one of these sections, send them back to the Dashboard
+        const currentActive = document.querySelector('.nav-item.active');
+        if (!currentActive || !document.body.contains(currentActive)) {
+            const dashNav = Array.from(document.querySelectorAll('.nav-item'))
+                                 .find(el => el.innerText.includes('Dashboard'));
+            if (dashNav) dashNav.click();
+        }
+    };
+
+    // Run on load
+    purgeMaisonOptions();
+
+    // 4. Persistence Observer 
+    // This ensures that if any dynamic scripts try to re-inject these items, they are removed.
+    const observer = new MutationObserver(() => purgeMaisonOptions());
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    console.log("Maison Core: 'Discipline Logic' and 'Batch Management' features purged.");
+})();
 
 
 
